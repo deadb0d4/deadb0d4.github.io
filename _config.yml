@@ -1,0 +1,12 @@
+title: "deadb106"
+email: ulyumjiev.dmitry@yandex.ru
+# description: >-
+#   Occasional writing by Dmitry Ulyumdzhiev
+baseurl: ""
+url: ""
+github_username:  deadb0d4
+linkedin_username: dmitry-ulyumdzhiev
+
+theme: minima
+plugins:
+  - jekyll-feed

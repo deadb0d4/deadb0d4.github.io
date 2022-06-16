@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>[wip] C++ coroutines are great | deadb106</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="[wip] C++ coroutines are great" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Introduction" />
+<meta property="og:description" content="Introduction" />
+<link rel="canonical" href="http://localhost:4000/2022/06/06/cxx-coros-are-great.html" />
+<meta property="og:url" content="http://localhost:4000/2022/06/06/cxx-coros-are-great.html" />
+<meta property="og:site_name" content="deadb106" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2022-06-06T16:21:21+03:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="[wip] C++ coroutines are great" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2022-06-06T16:21:21+03:00","datePublished":"2022-06-06T16:21:21+03:00","description":"Introduction","headline":"[wip] C++ coroutines are great","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2022/06/06/cxx-coros-are-great.html"},"url":"http://localhost:4000/2022/06/06/cxx-coros-are-great.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="deadb106" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">deadb106</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">[wip] C++ coroutines are great</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2022-06-06T16:21:21+03:00" itemprop="datePublished">Jun 6, 2022
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h1 id="introduction">Introduction</h1>
+
+<p>In this post, I will be outlining my learning of c++20 coroutines. When I was reading about it, I thought the feature is weird and is probably a subject for replacement. As I learned more and more about it, I gradually changed my mind. Now, I firmly believe the c++20 coroutines are great and will only be improving over time.</p>
+
+<p>For recreational purposes, I implement algorithms in c++ every so often. While one usually doesn’t need coroutines for writing CPU-bound code, I thought it would be fun to use coroutines for the following toy problem.</p>
+
+<h1 id="the-problem">The problem</h1>
+
+<p>We have the following ‘node’ class for representing a binary tree.</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">struct</span> <span class="nc">Node</span> <span class="p">{</span>
+  <span class="kt">int</span> <span class="n">value</span><span class="p">;</span>
+  <span class="n">Node</span><span class="o">*</span> <span class="n">left</span><span class="p">;</span>
+  <span class="n">Node</span><span class="o">*</span> <span class="n">right</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kt">bool</span> <span class="nf">IsLeaf</span><span class="p">(</span><span class="k">const</span> <span class="n">Node</span><span class="o">&amp;</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="o">!</span><span class="n">p</span><span class="p">.</span><span class="n">left</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">p</span><span class="p">.</span><span class="n">right</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>A node is called a leaf if both <code class="language-plaintext highlighter-rouge">left</code> and <code class="language-plaintext highlighter-rouge">right</code> pointers are null. Given a binary tree root, return a sum of values in its leaves.</p>
+
+<h1 id="the-benchmark">The benchmark</h1>
+
+<p>To test different solutions, I used only full binary trees. One can generate such trees like that:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">/// @brief: a full binary tree with `n` leaves</span>
+<span class="c1">/// so `n` is assumed to be 2^k</span>
+<span class="n">Node</span><span class="o">*</span> <span class="nf">MakeFullTree</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">,</span> <span class="kt">int</span> <span class="n">s</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">auto</span> <span class="n">p</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Node</span><span class="p">(</span><span class="n">s</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">p</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="n">n</span> <span class="o">/=</span> <span class="mi">2</span><span class="p">;</span>
+  <span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span> <span class="o">=</span> <span class="n">MakeFullTree</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">s</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+  <span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span> <span class="o">=</span> <span class="n">MakeFullTree</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">s</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">p</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>Please keep in mind that benchmarks below are parametrised by the number of leaves.</p>
+
+<h1 id="basic-solution">Basic solution</h1>
+
+<p>Without coroutines, one can use the following generic code.</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">Dfs</span><span class="p">(</span><span class="n">Node</span><span class="o">*</span> <span class="n">p</span><span class="p">,</span> <span class="k">auto</span><span class="o">&amp;&amp;</span> <span class="n">leaf_callback</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">IsLeaf</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">leaf_callback</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">);</span>
+    <span class="k">return</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="n">Dfs</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">,</span> <span class="n">leaf_callback</span><span class="p">);</span>
+  <span class="n">Dfs</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">,</span> <span class="n">leaf_callback</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">Dfs</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="p">[</span><span class="o">&amp;</span><span class="n">res</span><span class="p">](</span><span class="kt">int</span> <span class="n">x</span><span class="p">)</span> <span class="p">{</span> <span class="n">res</span> <span class="o">+=</span> <span class="n">x</span><span class="p">;</span> <span class="p">});</span>
+</code></pre></div></div>
+<p>We use the depth-first search to traverse the tree and a callback to sum up values. Compared to what follows, it is ridiculously fast:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>----------------------------------------------------------------
+Benchmark                      Time             CPU   Iterations
+----------------------------------------------------------------
+FastDfsBench/16384         40150 ns        40067 ns        12763
+FastDfsBench/1048576     3243753 ns      3241907 ns          215
+FastDfsBench/4194304    13239332 ns     13225222 ns           54
+FastDfsBench/16777216   55297925 ns     55155500 ns           10
+</code></pre></div></div>
+
+<p>Wouldn’t it be nice to iterate over leaf values though? This question got me into brushing-up my knowledge of coroutines. I mean something like this:</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">int</span> <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">leaf_value</span> <span class="o">:</span> <span class="n">LeafValues</span><span class="p">(</span><span class="n">root</span><span class="p">))</span> <span class="p">{</span>
+  <span class="n">res</span> <span class="o">+=</span> <span class="n">leaf_value</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h1 id="iterators">Iterators</h1>
+
+<p>One can create a class for traversing a tree. It should store the traversal state so far and have methods <code class="language-plaintext highlighter-rouge">begin</code> and <code class="language-plaintext highlighter-rouge">end</code> for the range-based for loop above. Effectively, it means to rewrite recursion with for-loops and a custom stack.</p>
+
+<p>Let’s solve our problem using a coroutine-based generator instead.</p>
+
+<h1 id="stackful-coroutines">Stackful coroutines</h1>
+
+<p>Stackful coroutines form an intuitive model of writing asynchronous code even though there are a few well-known bugs a novice can make.</p>
+
+<p>One can build user-level coroutines using the <a href="https://www.boost.org/doc/libs/1_72_0/libs/coroutine2/doc/html/index.html">Boost Coroutine2</a> library. Solving the problem at hand, we can do something like this:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Fun fact: the generic code above could be applied there</span>
+<span class="c1">// I copied the code here to illustrate the suspension moment</span>
+<span class="k">auto</span> <span class="nf">DfsImpl</span><span class="p">(</span><span class="n">Node</span><span class="o">*</span> <span class="n">p</span><span class="p">,</span> <span class="n">coro_t</span><span class="o">::</span><span class="n">push_type</span><span class="o">&amp;</span> <span class="n">sink</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">IsLeaf</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">))</span> <span class="p">{</span>
+    <span class="c1">// Jump to the caller returning the next value</span>
+    <span class="n">sink</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">);</span>
+    <span class="k">return</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="n">DfsImpl</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">,</span> <span class="n">sink</span><span class="p">);</span>
+  <span class="n">DfsImpl</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">,</span> <span class="n">sink</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="c1">// method with required API</span>
+<span class="k">auto</span> <span class="nf">LeafValues</span><span class="p">(</span><span class="n">Node</span><span class="o">*</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// create a channel-like handle; this is effectively the entry point</span>
+  <span class="c1">// to the coroutine execution flow</span>
+  <span class="n">coro_t</span><span class="o">::</span><span class="n">pull_type</span> <span class="n">source</span><span class="p">([</span><span class="n">p</span><span class="p">](</span><span class="n">coro_t</span><span class="o">::</span><span class="n">push_type</span><span class="o">&amp;</span> <span class="n">sink</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">DfsImpl</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">sink</span><span class="p">);</span>
+  <span class="p">});</span>
+  <span class="k">return</span> <span class="n">source</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="cm">/* User's code */</span>
+<span class="k">auto</span> <span class="n">source</span> <span class="o">=</span> <span class="n">LeafValues</span><span class="p">(</span><span class="n">root</span><span class="p">);</span>
+<span class="p">{</span>
+  <span class="c1">// Continue `DfsImpl` until next leaf value</span>
+  <span class="kt">int</span> <span class="n">leaf_value</span> <span class="o">=</span> <span class="n">source</span><span class="p">.</span><span class="n">get</span><span class="p">();</span>
+<span class="p">}</span>
+<span class="p">{</span>
+  <span class="c1">// for-loop is also valid</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">leaf_value</span> <span class="o">:</span> <span class="n">source</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">res</span> <span class="o">+=</span> <span class="n">leaf_value</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This code is easy to read especially if one is used to syntax like yield in python. On the other hand, if one thinks about the program stack it becomes apparent something tricky is going on above. Here is the snippet from the library documentation.</p>
+
+<blockquote>
+
+  <p>If coroutines were called exactly like routines, the stack would grow with every call and would never be popped. A jump into the middle of a coroutine would not be possible, because the return address would be on top of stack entries.</p>
+
+  <p>The solution is that each coroutine has its own stack and control-block (fcontext_t from Boost.Context). Before the coroutine gets suspended, the non-volatile registers (including stack and instruction/program pointer) of the currently active coroutine are stored in the coroutine’s control-block. The registers of the newly activated coroutine must be restored from its associated control-block before it is resumed.</p>
+
+</blockquote>
+
+<p>Since such coroutines have their own stack space, the word ‘stackful’ is used.</p>
+
+<p>The benchmark for this solution gives a good upper bound for any coroutine-based solution.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-----------------------------------------------------------------
+Benchmark                       Time             CPU   Iterations
+-----------------------------------------------------------------
+FiberDfsBench/16384        766208 ns       765749 ns          776
+FiberDfsBench/1048576    49170744 ns     49153214 ns           14
+FiberDfsBench/4194304   197069094 ns    197005250 ns            4
+FiberDfsBench/16777216  801769458 ns    801597000 ns            1
+</code></pre></div></div>
+
+<p>Let’s now try c++20 coroutines.</p>
+
+<h1 id="c-coroutines-an-intro">C++ coroutines: an intro</h1>
+
+<p>I don’t feel comfortable writing yet another c++20 coroutines introduction. That is because there are already a bunch of really good resources. I like <a href="#references">[1, 7, 3-5]</a>, and the <a href="https://en.cppreference.com/w/cpp/language/coroutines">cppref page</a>.</p>
+
+<p>For what follows, I assume we agree on the points below.</p>
+<ul>
+  <li>To <em>suspend</em> is to stop the current execution for a while and execute something else</li>
+  <li>A <em>suspension</em> might happen only inside a <em>coroutine function</em></li>
+  <li>
+    <p>A <em>coroutine function</em> is a function with a specific return type that has keywords like <code class="language-plaintext highlighter-rouge">co_{await,yield,return}</code> inside its body</p>
+  </li>
+  <li>Every time a <em>coroutine function</em> is created, a <em>memory region</em> for its locals and state of execution will be allocated</li>
+  <li>
+    <p>This <em>memory region</em> can be loosely called <em>the coroutine frame</em></p>
+  </li>
+  <li>We use <code class="language-plaintext highlighter-rouge">co_await</code> keyword to say to the compiler that we <em>may</em> suspend here</li>
+  <li><code class="language-plaintext highlighter-rouge">co_yield</code> is actually <code class="language-plaintext highlighter-rouge">co_await promise.yield_value</code></li>
+  <li><code class="language-plaintext highlighter-rouge">co_return</code> is a bit more involved, but does <code class="language-plaintext highlighter-rouge">co_await</code> in the end</li>
+</ul>
+
+<h1 id="generator">Generator</h1>
+
+<p>A simple example of a coroutine is a generator. It is typically used as follows:</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">generator</span> <span class="nf">SimpleYields</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">co_yield</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">co_yield</span> <span class="n">y</span><span class="p">;</span>
+  <span class="k">co_yield</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="c1">// usage</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">e</span> <span class="o">:</span> <span class="n">SimpleYields</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="p">{</span>
+  <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">e</span> <span class="o">&lt;&lt;</span> <span class="sc">' '</span><span class="p">;</span> <span class="c1">// 1, 3, 4</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>The <a href="https://github.com/lewissbaker/cppcoro/blob/master/include/cppcoro/generator.hpp">cppcoro generator</a> is a good reference implementation.</p>
+
+<p>If we have <code class="language-plaintext highlighter-rouge">generator</code> class above we can write something simple like this:</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">generator</span> <span class="nf">LeafValues</span><span class="p">(</span><span class="n">Node</span><span class="o">*</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">co_return</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">IsLeaf</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">co_yield</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
+    <span class="k">co_return</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">:</span> <span class="n">LeafValues</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">co_yield</span> <span class="n">x</span><span class="p">;</span>  <span class="c1">// value propagates to the caller</span>
+  <span class="p">}</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">:</span> <span class="n">LeafValues</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">co_yield</span> <span class="n">x</span><span class="p">;</span>  <span class="c1">// value propagates to the caller</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>Both memory and time complexities are bad though. Since <code class="language-plaintext highlighter-rouge">co_yield</code>s are nested, each value gets propagated <code class="language-plaintext highlighter-rouge">O(log(n))</code> times. Hence, the time complexity is <code class="language-plaintext highlighter-rouge">O(n log(n))</code> instead of <code class="language-plaintext highlighter-rouge">O(n)</code> for our benchmark. In addition, each recursive call of <code class="language-plaintext highlighter-rouge">LeafValues</code> will heap-allocate the coroutine frame because there is no way to predict its size on the caller site.</p>
+
+<p>Let’s ignore the memory for a moment. We can always rely on modern recycling allocators if anything. The time complexity is more interesting to reduce now.</p>
+
+<h1 id="symmetric-transfer">Symmetric transfer</h1>
+
+<p>Let’s say we are in a coroutine frame <code class="language-plaintext highlighter-rouge">A</code> and we want to ‘open’ a new coroutine frame <code class="language-plaintext highlighter-rouge">B</code>. To mitigate nested yields, we want to transfer control such that</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">A</code> suspends and we continue at <code class="language-plaintext highlighter-rouge">B</code></li>
+  <li>If <code class="language-plaintext highlighter-rouge">B</code> suspends we go back to <code class="language-plaintext highlighter-rouge">A</code>’s caller (not to <code class="language-plaintext highlighter-rouge">A</code>)</li>
+</ul>
+
+<p>This is what the symmetric transfer feature does in particular. In code, it looks as follows.</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">coroutine_handle</span><span class="o">&lt;&gt;</span> <span class="n">await_suspend</span><span class="p">(</span><span class="n">coroutine_handle</span><span class="o">&lt;&gt;</span> <span class="n">a_handle</span><span class="p">)</span> <span class="k">const</span> <span class="k">noexcept</span> <span class="p">{</span>
+  <span class="c1">/// return `B`'s handle to transfer suspend A</span>
+  <span class="c1">/// and 'fully' transfer control to B</span>
+  <span class="k">return</span> <span class="n">b_handle</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>The method <code class="language-plaintext highlighter-rouge">await_suspend</code> is a required method of an awaitable object. Hence, we need to ‘await’ nested calls. One can overload operator <code class="language-plaintext highlighter-rouge">co_await</code> for this:</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">auto</span> <span class="n">Coro</span><span class="o">::</span><span class="k">operator</span> <span class="nf">co_await</span><span class="p">()</span> <span class="p">{</span>
+  <span class="c1">/// return an awaitable object with await_suspend above</span>
+  <span class="k">return</span> <span class="n">Wait</span><span class="p">{</span><span class="n">handle</span><span class="p">};</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>Now, we can draft a solution to our problem:</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Coro</span> <span class="nf">CoroDfs</span><span class="p">(</span><span class="n">Node</span><span class="o">*</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">co_return</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">IsLeaf</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">))</span> <span class="p">{</span>
+    <span class="c1">// return to the original caller (not to the upper frame)</span>
+    <span class="k">co_yield</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
+    <span class="k">co_return</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">co_await</span> <span class="n">CoroDfs</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">);</span>  <span class="c1">// transfer control inside</span>
+  <span class="k">co_await</span> <span class="n">CoroDfs</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">);</span> <span class="c1">// transfer control inside</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>Post-factum, this code makes perfect sense. The logic stays the same as in the stackful example. We just annotated the points where suspension (will) may happen for the compiler.</p>
+
+<p>So far, we’ve made only the first yield. When it happens, we will return to the caller side (for-loop over leaf values), but we cannot go back to the coroutine just yet. Nested coroutine handles (frames) naturally form a call stack. In one way or another, we should be able to interact with this stack.</p>
+
+<p>Some people store a pointer to the previous frame inside each coroutine handle. This way, it is effectively an intrusive list data structure.</p>
+
+<p>Instead, I decided to allocate the stack itself<sup><a href="#notes"> a</a></sup>. So that I could use its space to avoid multiple heap allocations, and I also could access coroutine calls directly.</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">/// @brief the stack we use for nested coroutine calls</span>
+<span class="k">struct</span> <span class="nc">Stack</span> <span class="p">{</span>
+  <span class="n">vector</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">&gt;</span> <span class="n">buffer</span><span class="p">;</span>
+  <span class="kt">size_t</span> <span class="n">end</span><span class="p">;</span>
+  <span class="kt">size_t</span> <span class="n">frame_size</span><span class="p">;</span>
+
+  <span class="n">Stack</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">size</span><span class="p">)</span> <span class="o">:</span> <span class="n">buffer</span><span class="p">(</span><span class="n">size</span><span class="p">),</span> <span class="n">end</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">frame_size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">{}</span>
+
+  <span class="kt">void</span><span class="o">*</span> <span class="n">BackAddress</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="n">buffer</span><span class="p">.</span><span class="n">data</span><span class="p">()</span> <span class="o">+</span> <span class="n">end</span> <span class="o">-</span> <span class="n">frame_size</span><span class="p">;</span> <span class="p">}</span>
+
+  <span class="kt">void</span> <span class="n">Pop</span><span class="p">()</span> <span class="p">{</span> <span class="n">end</span> <span class="o">-=</span> <span class="n">frame_size</span><span class="p">;</span> <span class="p">}</span>
+
+  <span class="kt">void</span><span class="o">*</span> <span class="n">New</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">count</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// expect the same size every time, which isn't true for</span>
+    <span class="c1">// multiple coroutine functions with the same coroutine type</span>
+    <span class="n">frame_size</span> <span class="o">=</span> <span class="n">count</span><span class="p">;</span>
+    <span class="n">end</span> <span class="o">+=</span> <span class="n">frame_size</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">BackAddress</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="kt">bool</span> <span class="n">Empty</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="o">!</span><span class="n">end</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">};</span>
+</code></pre></div></div>
+<p>To use a custom allocator, we define class-level overloads.</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">static</span> <span class="kt">void</span><span class="o">*</span> <span class="n">Coro</span><span class="o">::</span><span class="n">promise_type</span><span class="o">::</span><span class="k">operator</span> <span class="nf">new</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">count</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="n">task</span><span class="o">-&gt;</span><span class="n">stack</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">count</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="n">Coro</span><span class="o">::</span><span class="n">promise_type</span><span class="o">::</span><span class="k">operator</span> <span class="nf">delete</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">ptr</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// no need to delete here</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>There is a funny problem though. The heap allocation elision optimization (HALO) may happen even if there is custom <code class="language-plaintext highlighter-rouge">new</code> and <code class="language-plaintext highlighter-rouge">delete</code>. And it did happen with my Release build. I used the following to stop HALO.</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// force compiler to not inline this method</span>
+<span class="n">__attribute__</span><span class="p">((</span><span class="n">noinline</span><span class="p">))</span> <span class="n">Coro</span> <span class="n">Coro</span><span class="o">::</span><span class="n">promise_type</span><span class="o">::</span><span class="n">get_return_object</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="p">{</span><span class="n">std</span><span class="o">::</span><span class="n">coroutine_handle</span><span class="o">&lt;</span><span class="n">promise_type</span><span class="o">&gt;::</span><span class="n">from_promise</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">)};</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>I am not sure if the above is guaranteed to prevent HALO, though.</p>
+
+<p>Now, we can go back to the coroutine from which we yielded like that:</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="n">Task</span><span class="o">::</span><span class="n">Resume</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">coroutine_handle</span><span class="o">&lt;</span><span class="n">Coro</span><span class="o">::</span><span class="n">promise_type</span><span class="o">&gt;::</span><span class="n">from_address</span><span class="p">(</span>
+      <span class="n">stack</span><span class="p">.</span><span class="n">BackAddress</span><span class="p">()).</span><span class="n">resume</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Finally, the caller’s code:</p>
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// task is static for simplicity, thread_local is better</span>
+<span class="c1">// but it is slow on macOS, while OK on Linux</span>
+<span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="n">call</span> <span class="o">=</span> <span class="n">CoroDfs</span><span class="p">(</span><span class="n">root</span><span class="p">);</span> <span class="n">task</span><span class="o">-&gt;</span><span class="n">HasStack</span><span class="p">();</span> <span class="n">task</span><span class="o">-&gt;</span><span class="n">Resume</span><span class="p">())</span> <span class="p">{</span>
+  <span class="c1">// check that some value is yield'ed</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">task</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">.</span><span class="n">IsSet</span><span class="p">())</span> <span class="p">{</span>
+    <span class="n">res</span> <span class="o">+=</span> <span class="n">task</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">.</span><span class="n">Pop</span><span class="p">();</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The benchmark for this code:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-----------------------------------------------------------
+Benchmark                 Time             CPU   Iterations
+-----------------------------------------------------------
+BM_Coro/16384        280575 ns       279798 ns         2446
+BM_Coro/1048576    18082648 ns     18012395 ns           38
+BM_Coro/4194304    71140171 ns     71137889 ns            9
+BM_Coro/16777216  316724208 ns    315827000 ns            2
+</code></pre></div></div>
+
+<p>It isn’t as fast as the simple DFS with a callback, but it is still better than the naive stackful code above. You can find the full benchmark <a href="https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp#L157">here</a>.</p>
+
+<h1 id="wrap-up">Wrap-up</h1>
+
+<p>Initially, I had two issues with c++20 coroutines.</p>
+
+<p>First of all, it seemed you couldn’t control heap allocations. Now, I would say you can but it is hard (as always). I came across <a href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p2477r0.html">this proposal</a> on control over heap allocation elision. Ironically, it might be more important to block HALO rather than to ensure it.</p>
+
+<p>Lastly, there are indeed about a dozen required customization points. It means one has to write a lot of boilerplate code and understand it before doing something interesting. A good point here is that c++20 coroutines are <em>a low-level assembly-language for coroutines</em><sup><a href="#references">3</a></sup> by design.</p>
+
+<p>There is a small inconvenience I see with this customization points, though. Libraries will probably present their own coroutines and awaitables for their concurrency model. Consequently, its users won’t be able to just say <code class="language-plaintext highlighter-rouge">co_await</code> without integration with the library. It is ok but it might be cumbersome to do.</p>
+
+<p>For now, c++ coroutines are very good already. One can control virtually anything that is happening inside their coroutines.</p>
+
+<h1 id="references">References</h1>
+
+<ol>
+  <li><a href="https://probablydance.com/2021/10/31/c-coroutines-do-not-spark-joy/">C++ Coroutines Do Not Spark Joy</a> by Malte Skarupke</li>
+  <li><a href="https://www.boost.org/doc/libs/1_72_0/libs/coroutine2/doc/html/index.html">Boost Coroutine2 Page</a></li>
+  <li><a href="https://lewissbaker.github.io/">Asymmetric Transfer</a> by Lewis Baker</li>
+  <li><a href="https://blog.eiler.eu/posts/20210512/">C++20: Building a Thread-Pool With Coroutines</a> by Michael Eiler</li>
+  <li><a href="https://www.scs.stanford.edu/~dm/blog/c++-coroutines.html">My tutorial and take on C++20 coroutines</a> by David Mazières</li>
+  <li><a href="https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp#L157">Full source code as a benchmark</a></li>
+  <li><a href="https://llvm.org/docs/Coroutines.html">Coroutines in LLVM</a></li>
+</ol>
+
+<h1 id="notes">Notes</h1>
+
+<p><sub>a. I didn’t want to use <a href="#iterators">a custom stack</a> but ended up having it? Not really. The user of <code class="language-plaintext highlighter-rouge">Coro</code> doesn’t have to write a custom stack every time there is a recursion. Instead, we use a <code class="language-plaintext highlighter-rouge">vector&lt;char&gt;</code> as a generic stack which is hidden from users </sub></p>
+
+  </div><a class="u-url" href="/2022/06/06/cxx-coros-are-great.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">deadb106</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">deadb106</li><li><a class="u-email" href="mailto:ulyumjiev.dmitry@yandex.ru">ulyumjiev.dmitry@yandex.ru</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/deadb0d4"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">deadb0d4</span></a></li><li><a href="https://www.linkedin.com/in/dmitry-ulyumdzhiev"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#linkedin"></use></svg> <span class="username">dmitry-ulyumdzhiev</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p></p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
