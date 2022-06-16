@@ -4,7 +4,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
 <title>[wip] C++ coroutines are great | deadb106</title>
-<meta name="generator" content="Jekyll v4.2.2" />
+<meta name="generator" content="Jekyll v3.9.2" />
 <meta property="og:title" content="[wip] C++ coroutines are great" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Introduction" />
@@ -220,9 +220,9 @@ FiberDfsBench/16777216  801769458 ns    801597000 ns            1
 
 <p>A simple example of a coroutine is a generator. It is typically used as follows:</p>
 <div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">generator</span> <span class="nf">SimpleYields</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">co_yield</span> <span class="n">x</span><span class="p">;</span>
-  <span class="k">co_yield</span> <span class="n">y</span><span class="p">;</span>
-  <span class="k">co_yield</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">;</span>
+  <span class="n">co_yield</span> <span class="n">x</span><span class="p">;</span>
+  <span class="n">co_yield</span> <span class="n">y</span><span class="p">;</span>
+  <span class="n">co_yield</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">;</span>
 <span class="p">}</span>
 <span class="c1">// usage</span>
 <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">e</span> <span class="o">:</span> <span class="n">SimpleYields</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="p">{</span>
@@ -234,17 +234,17 @@ FiberDfsBench/16777216  801769458 ns    801597000 ns            1
 <p>If we have <code class="language-plaintext highlighter-rouge">generator</code> class above we can write something simple like this:</p>
 <div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">generator</span> <span class="nf">LeafValues</span><span class="p">(</span><span class="n">Node</span><span class="o">*</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
   <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">co_return</span><span class="p">;</span>
+    <span class="n">co_return</span><span class="p">;</span>
   <span class="p">}</span>
   <span class="k">if</span> <span class="p">(</span><span class="n">IsLeaf</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">))</span> <span class="p">{</span>
-    <span class="k">co_yield</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
-    <span class="k">co_return</span><span class="p">;</span>
+    <span class="n">co_yield</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
+    <span class="n">co_return</span><span class="p">;</span>
   <span class="p">}</span>
   <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">:</span> <span class="n">LeafValues</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">))</span> <span class="p">{</span>
-    <span class="k">co_yield</span> <span class="n">x</span><span class="p">;</span>  <span class="c1">// value propagates to the caller</span>
+    <span class="n">co_yield</span> <span class="n">x</span><span class="p">;</span>  <span class="c1">// value propagates to the caller</span>
   <span class="p">}</span>
   <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">:</span> <span class="n">LeafValues</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">))</span> <span class="p">{</span>
-    <span class="k">co_yield</span> <span class="n">x</span><span class="p">;</span>  <span class="c1">// value propagates to the caller</span>
+    <span class="n">co_yield</span> <span class="n">x</span><span class="p">;</span>  <span class="c1">// value propagates to the caller</span>
   <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div></div>
@@ -276,15 +276,15 @@ FiberDfsBench/16777216  801769458 ns    801597000 ns            1
 <p>Now, we can draft a solution to our problem:</p>
 <div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Coro</span> <span class="nf">CoroDfs</span><span class="p">(</span><span class="n">Node</span><span class="o">*</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
   <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">co_return</span><span class="p">;</span>
+    <span class="n">co_return</span><span class="p">;</span>
   <span class="p">}</span>
   <span class="k">if</span> <span class="p">(</span><span class="n">IsLeaf</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">))</span> <span class="p">{</span>
     <span class="c1">// return to the original caller (not to the upper frame)</span>
-    <span class="k">co_yield</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
-    <span class="k">co_return</span><span class="p">;</span>
+    <span class="n">co_yield</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
+    <span class="n">co_return</span><span class="p">;</span>
   <span class="p">}</span>
-  <span class="k">co_await</span> <span class="n">CoroDfs</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">);</span>  <span class="c1">// transfer control inside</span>
-  <span class="k">co_await</span> <span class="n">CoroDfs</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">);</span> <span class="c1">// transfer control inside</span>
+  <span class="n">co_await</span> <span class="n">CoroDfs</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">);</span>  <span class="c1">// transfer control inside</span>
+  <span class="n">co_await</span> <span class="n">CoroDfs</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">);</span> <span class="c1">// transfer control inside</span>
 <span class="p">}</span>
 </code></pre></div></div>
 <p>Post-factum, this code makes perfect sense. The logic stays the same as in the stackful example. We just annotated the points where suspension (will) may happen for the compiler.</p>

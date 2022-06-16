@@ -6,6 +6,7 @@ domain: deadb0d4.github.io
 url: https://deadb0d4.github.io
 github_username:  deadb0d4
 linkedin_username: dmitry-ulyumdzhiev
+repository: deadb0d4/deadb0d4.github.io
 
 theme: minima
 plugins:
