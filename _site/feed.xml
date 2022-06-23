@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.9.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2022-06-23T14:51:50+03:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">deadb106</title><entry><title type="html">[wip] C++ coroutines are great</title><link href="http://localhost:4000/2022/06/06/cxx-coros-are-great.html" rel="alternate" type="text/html" title="[wip] C++ coroutines are great" /><published>2022-06-06T16:21:21+03:00</published><updated>2022-06-06T16:21:21+03:00</updated><id>http://localhost:4000/2022/06/06/cxx-coros-are-great</id><content type="html" xml:base="http://localhost:4000/2022/06/06/cxx-coros-are-great.html">&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.9.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2022-06-23T15:13:05+03:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">deadb106</title><entry><title type="html">C++ coroutines are great</title><link href="http://localhost:4000/2022/06/06/cxx-coros-are-great.html" rel="alternate" type="text/html" title="C++ coroutines are great" /><published>2022-06-06T16:21:21+03:00</published><updated>2022-06-06T16:21:21+03:00</updated><id>http://localhost:4000/2022/06/06/cxx-coros-are-great</id><content type="html" xml:base="http://localhost:4000/2022/06/06/cxx-coros-are-great.html">&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
 
 &lt;p&gt;In this post, I will be outlining my learning of c++20 coroutines. When I was reading about it, I thought the feature is weird and is probably a subject for replacement. As I learned more and more about it, I gradually changed my mind. Now, I firmly believe the c++20 coroutines are great and will be improving over time.&lt;/p&gt;
 
@@ -58,13 +58,13 @@
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;p&gt;We use the depth-first search to traverse the tree and a callback to sum up values. Compared to what follows, it’s ridiculously fast:&lt;/p&gt;
 
-&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;----------------------------------------------------------------
-Benchmark                      Time             CPU   Iterations
-----------------------------------------------------------------
-FastDfsBench/16384         40150 ns        40067 ns        12763
-FastDfsBench/1048576     3243753 ns      3241907 ns          215
-FastDfsBench/4194304    13239332 ns     13225222 ns           54
-FastDfsBench/16777216   55297925 ns     55155500 ns           10
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;-----------------------------------
+Benchmark                      Time
+-----------------------------------
+BM_Dfs/16384         40150 ns
+BM_Dfs/1048576     3243753 ns
+BM_Dfs/4194304    13239332 ns
+BM_Dfs/16777216   55297925 ns
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;Wouldn’t it be nice to iterate over leaf values though? This question got me into brushing-up my knowledge of coroutines. I mean something like this:&lt;/p&gt;
@@ -123,13 +123,13 @@ FastDfsBench/16777216   55297925 ns     55155500 ns           10
 &lt;p&gt;Since such coroutines have their own stack space, the word ‘stackful’ applies.&lt;/p&gt;
 
 &lt;p&gt;The benchmark for this solution gives a good upper bound for any coroutine-based solution.&lt;/p&gt;
-&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;-----------------------------------------------------------------
-Benchmark                       Time             CPU   Iterations
------------------------------------------------------------------
-FiberDfsBench/16384        766208 ns       765749 ns          776
-FiberDfsBench/1048576    49170744 ns     49153214 ns           14
-FiberDfsBench/4194304   197069094 ns    197005250 ns            4
-FiberDfsBench/16777216  801769458 ns    801597000 ns            1
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;------------------------------------
+Benchmark                       Time
+------------------------------------
+BM_Fiber/16384        766208 ns
+BM_Fiber/1048576    49170744 ns
+BM_Fiber/4194304   197069094 ns
+BM_Fiber/16777216  801769458 ns
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;Let’s now try c++20 coroutines.&lt;/p&gt;
@@ -267,16 +267,16 @@ FiberDfsBench/16777216  801769458 ns    801597000 ns            1
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;The benchmark for this code:&lt;/p&gt;
-&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;-----------------------------------------------------------
-Benchmark                 Time             CPU   Iterations
------------------------------------------------------------
-BM_Coro/16384        280575 ns       279798 ns         2446
-BM_Coro/1048576    18082648 ns     18012395 ns           38
-BM_Coro/4194304    71140171 ns     71137889 ns            9
-BM_Coro/16777216  316724208 ns    315827000 ns            2
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;------------------------------
+Benchmark                 Time
+------------------------------
+BM_Coro/16384        280575 ns
+BM_Coro/1048576    18082648 ns
+BM_Coro/4194304    71140171 ns
+BM_Coro/16777216  316724208 ns
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;It isn’t as fast as the first DFS with a callback, but it’s still better than the naive stackful code above. You can find the full benchmark &lt;a href=&quot;https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp#L157&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;It isn’t as fast as the first DFS with a callback, but it’s still better than the naive stackful code above. You can find the full benchmark &lt;a href=&quot;https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;h1 id=&quot;wrap-up&quot;&gt;Wrap-up&lt;/h1&gt;
 
@@ -288,7 +288,7 @@ BM_Coro/16777216  316724208 ns    315827000 ns            2
 
 &lt;p&gt;I see a small inconvenience with these customization points, though. Libraries will probably present their own coroutines and awaitables for their concurrency model. Hence, its users won’t be able to just say &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_await&lt;/code&gt; without integration with the library. It’s ok but it might be cumbersome to do.&lt;/p&gt;
 
-&lt;p&gt;For now, c++ coroutines are superior already. One can control virtually anything that is happening inside their coroutines.&lt;/p&gt;
+&lt;p&gt;The c++ coroutines are superior already. One can control virtually anything that is happening inside their coroutines.&lt;/p&gt;
 
 &lt;h1 id=&quot;references&quot;&gt;References&lt;/h1&gt;
 
@@ -298,7 +298,7 @@ BM_Coro/16777216  316724208 ns    315827000 ns            2
   &lt;li&gt;&lt;a href=&quot;https://lewissbaker.github.io/&quot;&gt;Asymmetric Transfer&lt;/a&gt; by Lewis Baker&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;https://blog.eiler.eu/posts/20210512/&quot;&gt;C++20: Building a Thread-Pool With Coroutines&lt;/a&gt; by Michael Eiler&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;https://www.scs.stanford.edu/~dm/blog/c++-coroutines.html&quot;&gt;My tutorial and take on C++20 coroutines&lt;/a&gt; by David Mazières&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp#L157&quot;&gt;Full source code as a benchmark&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp&quot;&gt;Full source code as a benchmark&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;https://llvm.org/docs/Coroutines.html&quot;&gt;Coroutines in LLVM&lt;/a&gt;&lt;/li&gt;
 &lt;/ol&gt;
 

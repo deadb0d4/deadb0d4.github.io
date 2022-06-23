@@ -3,9 +3,9 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>[wip] C++ coroutines are great | deadb106</title>
+<title>C++ coroutines are great | deadb106</title>
 <meta name="generator" content="Jekyll v3.9.2" />
-<meta property="og:title" content="[wip] C++ coroutines are great" />
+<meta property="og:title" content="C++ coroutines are great" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Introduction" />
 <meta property="og:description" content="Introduction" />
@@ -15,9 +15,9 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2022-06-06T16:21:21+03:00" />
 <meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="[wip] C++ coroutines are great" />
+<meta property="twitter:title" content="C++ coroutines are great" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2022-06-06T16:21:21+03:00","datePublished":"2022-06-06T16:21:21+03:00","description":"Introduction","headline":"[wip] C++ coroutines are great","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2022/06/06/cxx-coros-are-great.html"},"url":"http://localhost:4000/2022/06/06/cxx-coros-are-great.html"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2022-06-06T16:21:21+03:00","datePublished":"2022-06-06T16:21:21+03:00","description":"Introduction","headline":"C++ coroutines are great","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2022/06/06/cxx-coros-are-great.html"},"url":"http://localhost:4000/2022/06/06/cxx-coros-are-great.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="deadb106" /></head>
 <body><header class="site-header" role="banner">
@@ -40,7 +40,7 @@
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">[wip] C++ coroutines are great</h1>
+    <h1 class="post-title p-name" itemprop="name headline">C++ coroutines are great</h1>
     <p class="post-meta">
       <time class="dt-published" datetime="2022-06-06T16:21:21+03:00" itemprop="datePublished">Jun 6, 2022
       </time></p>
@@ -107,13 +107,13 @@
 </code></pre></div></div>
 <p>We use the depth-first search to traverse the tree and a callback to sum up values. Compared to what follows, it’s ridiculously fast:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>----------------------------------------------------------------
-Benchmark                      Time             CPU   Iterations
-----------------------------------------------------------------
-FastDfsBench/16384         40150 ns        40067 ns        12763
-FastDfsBench/1048576     3243753 ns      3241907 ns          215
-FastDfsBench/4194304    13239332 ns     13225222 ns           54
-FastDfsBench/16777216   55297925 ns     55155500 ns           10
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-----------------------------------
+Benchmark                      Time
+-----------------------------------
+BM_Dfs/16384         40150 ns
+BM_Dfs/1048576     3243753 ns
+BM_Dfs/4194304    13239332 ns
+BM_Dfs/16777216   55297925 ns
 </code></pre></div></div>
 
 <p>Wouldn’t it be nice to iterate over leaf values though? This question got me into brushing-up my knowledge of coroutines. I mean something like this:</p>
@@ -172,13 +172,13 @@ FastDfsBench/16777216   55297925 ns     55155500 ns           10
 <p>Since such coroutines have their own stack space, the word ‘stackful’ applies.</p>
 
 <p>The benchmark for this solution gives a good upper bound for any coroutine-based solution.</p>
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-----------------------------------------------------------------
-Benchmark                       Time             CPU   Iterations
------------------------------------------------------------------
-FiberDfsBench/16384        766208 ns       765749 ns          776
-FiberDfsBench/1048576    49170744 ns     49153214 ns           14
-FiberDfsBench/4194304   197069094 ns    197005250 ns            4
-FiberDfsBench/16777216  801769458 ns    801597000 ns            1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>------------------------------------
+Benchmark                       Time
+------------------------------------
+BM_Fiber/16384        766208 ns
+BM_Fiber/1048576    49170744 ns
+BM_Fiber/4194304   197069094 ns
+BM_Fiber/16777216  801769458 ns
 </code></pre></div></div>
 
 <p>Let’s now try c++20 coroutines.</p>
@@ -316,16 +316,16 @@ FiberDfsBench/16777216  801769458 ns    801597000 ns            1
 </code></pre></div></div>
 
 <p>The benchmark for this code:</p>
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-----------------------------------------------------------
-Benchmark                 Time             CPU   Iterations
------------------------------------------------------------
-BM_Coro/16384        280575 ns       279798 ns         2446
-BM_Coro/1048576    18082648 ns     18012395 ns           38
-BM_Coro/4194304    71140171 ns     71137889 ns            9
-BM_Coro/16777216  316724208 ns    315827000 ns            2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>------------------------------
+Benchmark                 Time
+------------------------------
+BM_Coro/16384        280575 ns
+BM_Coro/1048576    18082648 ns
+BM_Coro/4194304    71140171 ns
+BM_Coro/16777216  316724208 ns
 </code></pre></div></div>
 
-<p>It isn’t as fast as the first DFS with a callback, but it’s still better than the naive stackful code above. You can find the full benchmark <a href="https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp#L157">here</a>.</p>
+<p>It isn’t as fast as the first DFS with a callback, but it’s still better than the naive stackful code above. You can find the full benchmark <a href="https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp">here</a>.</p>
 
 <h1 id="wrap-up">Wrap-up</h1>
 
@@ -337,7 +337,7 @@ BM_Coro/16777216  316724208 ns    315827000 ns            2
 
 <p>I see a small inconvenience with these customization points, though. Libraries will probably present their own coroutines and awaitables for their concurrency model. Hence, its users won’t be able to just say <code class="language-plaintext highlighter-rouge">co_await</code> without integration with the library. It’s ok but it might be cumbersome to do.</p>
 
-<p>For now, c++ coroutines are superior already. One can control virtually anything that is happening inside their coroutines.</p>
+<p>The c++ coroutines are superior already. One can control virtually anything that is happening inside their coroutines.</p>
 
 <h1 id="references">References</h1>
 
@@ -347,7 +347,7 @@ BM_Coro/16777216  316724208 ns    315827000 ns            2
   <li><a href="https://lewissbaker.github.io/">Asymmetric Transfer</a> by Lewis Baker</li>
   <li><a href="https://blog.eiler.eu/posts/20210512/">C++20: Building a Thread-Pool With Coroutines</a> by Michael Eiler</li>
   <li><a href="https://www.scs.stanford.edu/~dm/blog/c++-coroutines.html">My tutorial and take on C++20 coroutines</a> by David Mazières</li>
-  <li><a href="https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp#L157">Full source code as a benchmark</a></li>
+  <li><a href="https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp">Full source code as a benchmark</a></li>
   <li><a href="https://llvm.org/docs/Coroutines.html">Coroutines in LLVM</a></li>
 </ol>
 

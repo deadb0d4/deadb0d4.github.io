@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "[wip] C++ coroutines are great"
+title:  "C++ coroutines are great"
 date:   2022-06-06 16:21:21 +0300
 ---
 
@@ -68,13 +68,13 @@ Dfs(root, [&res](int x) { res += x; });
 We use the depth-first search to traverse the tree and a callback to sum up values. Compared to what follows, it's ridiculously fast:
 
 ```
-----------------------------------------------------------------
-Benchmark                      Time             CPU   Iterations
-----------------------------------------------------------------
-FastDfsBench/16384         40150 ns        40067 ns        12763
-FastDfsBench/1048576     3243753 ns      3241907 ns          215
-FastDfsBench/4194304    13239332 ns     13225222 ns           54
-FastDfsBench/16777216   55297925 ns     55155500 ns           10
+-----------------------------------
+Benchmark                      Time
+-----------------------------------
+BM_Dfs/16384         40150 ns
+BM_Dfs/1048576     3243753 ns
+BM_Dfs/4194304    13239332 ns
+BM_Dfs/16777216   55297925 ns
 ```
 
 Wouldn't it be nice to iterate over leaf values though? This question got me into brushing-up my knowledge of coroutines. I mean something like this:
@@ -134,13 +134,13 @@ Since such coroutines have their own stack space, the word 'stackful' applies.
 
 The benchmark for this solution gives a good upper bound for any coroutine-based solution.
 ```
------------------------------------------------------------------
-Benchmark                       Time             CPU   Iterations
------------------------------------------------------------------
-FiberDfsBench/16384        766208 ns       765749 ns          776
-FiberDfsBench/1048576    49170744 ns     49153214 ns           14
-FiberDfsBench/4194304   197069094 ns    197005250 ns            4
-FiberDfsBench/16777216  801769458 ns    801597000 ns            1
+------------------------------------
+Benchmark                       Time
+------------------------------------
+BM_Fiber/16384        766208 ns
+BM_Fiber/1048576    49170744 ns
+BM_Fiber/4194304   197069094 ns
+BM_Fiber/16777216  801769458 ns
 ```
 
 Let's now try c++20 coroutines.
@@ -280,13 +280,13 @@ for (auto call = CoroDfs(root); task->HasStack(); task->Resume()) {
 
 The benchmark for this code:
 ```
------------------------------------------------------------
-Benchmark                 Time             CPU   Iterations
------------------------------------------------------------
-BM_Coro/16384        280575 ns       279798 ns         2446
-BM_Coro/1048576    18082648 ns     18012395 ns           38
-BM_Coro/4194304    71140171 ns     71137889 ns            9
-BM_Coro/16777216  316724208 ns    315827000 ns            2
+------------------------------
+Benchmark                 Time
+------------------------------
+BM_Coro/16384        280575 ns
+BM_Coro/1048576    18082648 ns
+BM_Coro/4194304    71140171 ns
+BM_Coro/16777216  316724208 ns
 ```
 
 It isn't as fast as the first DFS with a callback, but it's still better than the naive stackful code above. You can find the full benchmark [here][my-code].
@@ -301,7 +301,7 @@ Lastly, there are about a dozen of customization points. It means one has to wri
 
 I see a small inconvenience with these customization points, though. Libraries will probably present their own coroutines and awaitables for their concurrency model. Hence, its users won't be able to just say `co_await` without integration with the library. It's ok but it might be cumbersome to do.
 
-For now, c++ coroutines are superior already. One can control virtually anything that is happening inside their coroutines.
+The c++ coroutines are superior already. One can control virtually anything that is happening inside their coroutines.
 
 # References
 
@@ -316,7 +316,7 @@ For now, c++ coroutines are superior already. One can control virtually anything
 [cpp-do-not-spark-joy]: https://probablydance.com/2021/10/31/c-coroutines-do-not-spark-joy/
 [boost-coro]: https://www.boost.org/doc/libs/1_72_0/libs/coroutine2/doc/html/index.html
 [coro-cppref]: https://en.cppreference.com/w/cpp/language/coroutines
-[my-code]: https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp#L157
+[my-code]: https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp
 
 # Notes
 
