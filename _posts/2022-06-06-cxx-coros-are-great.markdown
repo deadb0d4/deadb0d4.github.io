@@ -6,11 +6,12 @@ date:   2022-06-06 16:21:21 +0300
 
 # Introduction
 
-In this post, I will be outlining my learning of c++20 coroutines. When I was reading about it, I thought the feature is weird and is probably a subject for replacement. As I learned more and more about it, I gradually changed my mind. Now, I firmly believe the c++20 coroutines are great and will be improving over time.
+In this post, I will be outlining my learning of c++20 coroutines. When I was reading about it, I thought the feature was weird and probably a subject for replacement. As I learned more and more about it, I gradually changed my mind. Now, I firmly believe the c++20 coroutines are very good already and will be improving over time.
 
-For recreational purposes, I write algorithms in c++ every so often. While one often doesn’t need coroutines for writing CPU-bound code, I thought it would be fun to use coroutines for the following toy problem.
+For recreational purposes, I write algorithms in c++ every so often. While one usually doesn’t need coroutines for writing CPU-bound code, I thought it would be fun to use coroutines for the following toy problem.
 
-# The problem
+
+# Problem
 
 We have the following 'node' class for representing a binary tree.
 ```c++
@@ -24,12 +25,12 @@ bool IsLeaf(const Node& p) {
   return !p.left && !p.right;
 }
 ```
-I call a node _a leaf_ if both its `left` and `right` pointers are null. Given a binary tree root, return a sum of values in its leaves.
+Let's call a tree node _a leaf_ if its `left` and `right` pointers are null. The problem is to count a sum of values in its leaves.
 
-# The benchmark
 
-To test different solutions, I used full binary trees. One can generate such trees like that:
+# Benchmark
 
+To compare various solutions, I used full binary trees. Each node in such a tree has either both children or none (leaves). One can generate such trees like that:
 ```c++
 /// @brief: a full binary tree with `n` leaves
 /// so `n` is assumed to be 2^k
@@ -44,11 +45,12 @@ Node* MakeFullTree(int n, int s = 0) {
   return p;
 }
 ```
-I parametrise the benchmarks below by the number of leaves in a full binary tree.
+I parametrise the benchmark results below by the number of leaves in a full binary tree.
+
 
 # Basic solution
 
-Without coroutines, one can use the following generic code.
+Without any coroutines, one can use the following generic code.
 ```c++
 void Dfs(Node* p, auto&& leaf_callback) {
   if (!p) {
@@ -66,7 +68,6 @@ int res = 0;
 Dfs(root, [&res](int x) { res += x; });
 ```
 We use the depth-first search to traverse the tree and a callback to sum up values. Compared to what follows, it's ridiculously fast:
-
 ```
 -----------------------------------
 Benchmark                      Time
@@ -76,14 +77,15 @@ BM_Dfs/1048576     3243753 ns
 BM_Dfs/4194304    13239332 ns
 BM_Dfs/16777216   55297925 ns
 ```
-
-Wouldn't it be nice to iterate over leaf values though? This question got me into brushing-up my knowledge of coroutines. I mean something like this:
+Wouldn't it be nice to iterate over leaf values, though? This question got me into brushing up on my knowledge of coroutines. Specifically, can we write a function like this?
 ```c++
 int res = 0;
 for (int leaf_value : LeafValues(root)) {
   res += leaf_value;
 }
 ```
+Returning leaf values in a container from the function is trivial, and I don't want that. The goal is to go back and forth between iterating over leaves and the loop body above.
+
 
 # Iterators
 
@@ -91,12 +93,10 @@ One can create a class for traversing a tree. It should store the traversal stat
 
 Let's solve our problem using a coroutine-based generator instead.
 
+
 # Stackful coroutines
 
-Stackful coroutines provide an intuitive way of writing asynchronous code.
-
-One can build user-level coroutines using the [Boost Coroutine2][boost-coro] library. Solving the problem at hand, we can do something like this:
-
+Stackful coroutines provide an intuitive way of writing asynchronous code. One can build user-level coroutines using the [Boost Coroutine2][boost-coro] library. Solving the problem at hand, we can do something like this:
 ```c++
 // Fun fact: the generic code above could be applied there
 auto DfsImpl(Node* p, coro_t::push_type& yield) {
@@ -112,16 +112,17 @@ auto DfsImpl(Node* p, coro_t::push_type& yield) {
   DfsImpl(p->right, yield);
 }
 
+/// @brief: creates a channel-like handle
+/// this is effectively the entry point
+/// to the coroutine execution flow
 auto LeafValues(Node* p) {
-  // create a channel-like handle; this is effectively the entry point
-  // to the coroutine execution flow: call to coro will resume the coroutine
+  // call to `coro` will resume the coroutine
   coro_t::pull_type coro([p](coro_t::push_type& yield) {
     DfsImpl(p, yield);
   });
   return coro;
 }
 ```
-
 If you think about the program stack you will notice something tricky is going on above. Here is the snippet from the library documentation.
 
 >
@@ -130,7 +131,7 @@ If you think about the program stack you will notice something tricky is going o
 > The solution is that each coroutine has its own stack and control-block (fcontext_t from Boost.Context). Before the coroutine gets suspended, the non-volatile registers (including stack and instruction/program pointer) of the currently active coroutine are stored in the coroutine's control-block. The registers of the newly activated coroutine must be restored from its associated control-block before it is resumed.
 >
 
-Since such coroutines have their own stack space, the word 'stackful' applies.
+Shortly, each coroutine has its memory region for its stack. In particular, the recursion is possible inside a coroutine due to this stack. Hence, the word ‘stackful’ applies.
 
 The benchmark for this solution gives a good upper bound for any coroutine-based solution.
 ```
@@ -145,16 +146,19 @@ BM_Fiber/16777216  801769458 ns
 
 Let's now try c++20 coroutines.
 
+
 # C++ coroutines: an intro
 
-I don’t feel comfortable writing yet another c++20 coroutines introduction. That is because there are already a bunch of excellent resources. I like [1,3-5,7](#references) below.
+I don’t feel comfortable writing yet another c++20 coroutines introduction. That is because there are already a bunch of excellent resources. I like [1, 3-5, 7](#references) below.
 
 For what follows, I assume we agree on the points below.
+
 - To _suspend_ is to stop the current execution for a while and execute something else. A _suspension_ might happen only inside a _coroutine function_. A _coroutine function_ is a function with a specific return type that has keywords like `co_{await,yield,return}` inside its body
 
-- Every time a _coroutine function_ is created, a _memory region_ for its locals and state of execution will be allocated. We will informally call this memory region as well as the code inside the coroutine function the _coroutine frame_
+- Every time a _coroutine function_ is created, a _memory region_ for its locals and state of execution will be allocated. We will informally call both this memory region and the code inside the coroutine function the _coroutine frame_
 
-- We use `co_await` keyword to say to the compiler that we _may_ suspend here. The `co_yield` keyword is actually `co_await promise.yield_value`. The `co_return` keyword is a bit more involved, but does `co_await` in the end
+- We use `co_await` keyword to say to the compiler that we _may_ suspend here
+
 
 # Generator
 
@@ -172,7 +176,7 @@ for (int e : SimpleYields(1, 3)) {
 ```
 The [cppcoro generator](https://github.com/lewissbaker/cppcoro/blob/master/include/cppcoro/generator.hpp) is a good reference implementation.
 
-If we have the `generator` class above we can write something like this:
+If we have the `generator` class above, we can write something like this:
 ```c++
 generator LeafValues(Node* p) {
   if (!p) {
@@ -190,23 +194,34 @@ generator LeafValues(Node* p) {
   }
 }
 ```
-Both memory and time complexities are bad though. Since `co_yield`s are nested, each value gets propagated `O(log(n))` times. Hence, the time complexity is `O(n log(n))` instead of `O(n)` for our benchmark. Also, each recursive call of `LeafValues` will heap-allocate the coroutine frame because there is no way to predict its size on the caller site.
+Both memory and time complexities are suboptimal, though. Since `co_yield`s are nested, each value gets propagated `O(log(n))` times. Hence, the time complexity is `O(n log(n))` instead of `O(n)` for our benchmark. Also, each recursive call of `LeafValues` will heap-allocate the coroutine frame because there is no way to predict its size on the caller site.
 
 Let's ignore the memory for a moment. We can always rely on modern recycling allocators if anything. The time complexity is more interesting to reduce now.
 
+
 # Symmetric transfer
+
+In what follows, I use `Coro` as the so-called future class for my coroutine. Its corresponding promise class is `Coro::promise_type`.
 
 Let's say we are in a coroutine frame `A` and we want to 'open' a new coroutine frame `B`. To mitigate nested yields, we want to transfer control such that
 - `A` suspends and we continue at `B`
-- If `B` suspends we go back to `A`'s caller (not to `A`)
+- If `B` suspends we go back to `A`'s caller (as opposed to `A`)
 
 This is what the symmetric transfer feature does in particular. In code, it looks as follows.
 ```c++
-coroutine_handle<> await_suspend(coroutine_handle<> a_handle) const noexcept {
-  // return `B`'s handle to transfer suspend A
-  // and 'fully' transfer control to B
-  return b_handle;
-}
+/// @brief: helper struct to transfering control
+struct Wait {
+  bool await_ready() const noexcept { return false; }
+
+  void await_resume() const noexcept {}
+
+  coroutine_handle<> await_suspend(coroutine_handle<> coro) const noexcept {
+    // return `B`'s handle to transfer suspend A
+    // and 'fully' transfer control to B
+    return handle;
+  }
+  coroutine_handle<> handle;
+};
 ```
 The method `await_suspend` is a required method of an awaitable object. Hence, we need to 'await' nested calls. One can overload operator `co_await` for this:
 ```c++
@@ -233,32 +248,52 @@ Coro CoroDfs(Node* p) {
 ```
 Post-factum, this code makes perfect sense. The logic stays the same as in the example. We just annotated the points where suspension (will) may happen for the compiler.
 
-At this point, we've covered the first yield. When it happens, we will return to the caller side, but we can't go back to the coroutine just yet. Nested coroutine handles (frames) naturally form a call stack. In one way or another, we should be able to interact with this stack.
+At this point, we've covered the first yield. When it happens, we will return to the caller side, but we can't go back to the coroutine just yet. The problem looks like this:
+```c++
+// caller side, control transferred to (1)
+int next_value = top_level_coro_handle(args);
+// (2)
+// to resume correctly we should go back to (3), _not_ to (4)
 
-Some people store a pointer to the previous frame inside each coroutine handle. This way, it’s effectively an intrusive list data structure.
+Coro TopLevelCoroFn(Args args) {
+  // (1)
+  co_await AnotherCoro(args); // top level transfers control further
+  // (4)
+}
+Coro AnotherCoro(Args args) {
+  // ...
+  co_yield some_var; // <- control returns to (2)
+  // (3)
+}
+```
+
+Nested coroutine handles (frames) naturally form a call stack. In one way or another, we should be able to interact with this stack. Some people store a pointer to the previous frame inside each coroutine handle. This way, it’s effectively an intrusive list data structure.
 
 Instead, I decided to allocate the stack itself<sup>[ a](#notes)</sup> so that I could use its space to avoid a bunch of heap allocations, and I also could access coroutine frames directly.
 
 To use a custom allocator, we define class-level overloads.
 ```c++
+// thread locals on macOS are extremely slow (x2-x3 slower here)
+// thread locals on Linux (tested on ubuntu) are OK, though
+// https://github.com/rust-lang/rust/issues/60141 looks relevant
+static Task* task = new Task();
+
+// ...
+
 static void* Coro::promise_type::operator new(size_t count) {
-  // here `task` is a static, one should use thread_local
-  // but thread locals are slow on macOS, while OK on Linux
   return task->stack.New(count);
 }
-
 static void Coro::promise_type::operator delete(void* ptr) {
-  // no need to delete here
 }
 ```
-We got a fun issue though. The heap allocation elision optimization (HALO) may happen even if there is custom `new` and `delete`. And it did happen with my Release build. I used the following to stop HALO.
+Unfortunately, the heap allocation elision optimization (HALO) may happen even though there is a custom new and delete. And it did happen with my Release build. I used the following to stop HALO.
 ```c++
-// force compiler to not inline this method
+// force compiler to not inline this method,
+// otherwise our new/delete won't be used
 __attribute__((noinline)) Coro Coro::promise_type::get_return_object() {
   return {std::coroutine_handle<promise_type>::from_promise(*this)};
 }
 ```
-I am not sure if it guarantees to prevent HALO every time, though.
 
 Now, we can go back to the coroutine from which we yielded like that:
 ```c++
@@ -291,17 +326,19 @@ BM_Coro/16777216  316724208 ns
 
 It isn't as fast as the first DFS with a callback, but it's still better than the naive stackful code above. You can find the full benchmark [here][my-code].
 
+
 # Wrap-up
 
 Initially, I had two issues with c++20 coroutines.
 
-First of all, it seemed you couldn’t control heap allocations. Now, I would say you can but it's hard (as always). I came across [this proposal](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p2477r0.html) on control over heap allocation elision. Ironically, it might be more important to block HALO rather than to ensure it.
+First of all, it seemed you couldn’t control heap allocations. Now, I would say you can, but it’s involved (as always). I came across [this proposal](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p2477r0.html) on control over heap allocation elision. Ironically, it might be more important to block HALO rather than to ensure it.
 
-Lastly, there are about a dozen of customization points. It means one has to write a lot of boilerplate code and understand it before doing something interesting. A good point here is that c++20 coroutines are _a low-level assembly-language for coroutines_<sup>[3](#references)</sup> by design.
+Lastly, there are about a dozen of customization points. It implies a lot of boilerplate code for doing something interesting. It is probably fair enough since c++20 coroutines were designed to be a low-level assembly language for coroutines<sup>[3](#references)</sup>.
 
-I see a small inconvenience with these customization points, though. Libraries will probably present their own coroutines and awaitables for their concurrency model. Hence, its users won't be able to just say `co_await` without integration with the library. It's ok but it might be cumbersome to do.
+I see an inconvenience with these customization points, however. Libraries will probably present their coroutines and awaitables for their concurrency model. Hence, its users won’t be able to just say co_await without thoughtful integration with the library. It’s ok, but it might be cumbersome to do.
 
-The c++ coroutines are superior already. One can control virtually anything that is happening inside their coroutines.
+In conclusion, I think the c++ coroutines are appreciable already. One can control almost anything that is happening inside their coroutines.
+
 
 # References
 
@@ -317,6 +354,7 @@ The c++ coroutines are superior already. One can control virtually anything that
 [boost-coro]: https://www.boost.org/doc/libs/1_72_0/libs/coroutine2/doc/html/index.html
 [coro-cppref]: https://en.cppreference.com/w/cpp/language/coroutines
 [my-code]: https://github.com/deadb0d4/incidental-cxx/blob/develop/benchmarks/coro_dfs.cpp
+
 
 # Notes
 

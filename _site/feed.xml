@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.9.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2022-06-23T15:13:05+03:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">deadb106</title><entry><title type="html">C++ coroutines are great</title><link href="http://localhost:4000/2022/06/06/cxx-coros-are-great.html" rel="alternate" type="text/html" title="C++ coroutines are great" /><published>2022-06-06T16:21:21+03:00</published><updated>2022-06-06T16:21:21+03:00</updated><id>http://localhost:4000/2022/06/06/cxx-coros-are-great</id><content type="html" xml:base="http://localhost:4000/2022/06/06/cxx-coros-are-great.html">&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.9.2">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2022-07-01T13:20:15+03:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">deadb106</title><entry><title type="html">C++ coroutines are great</title><link href="http://localhost:4000/2022/06/06/cxx-coros-are-great.html" rel="alternate" type="text/html" title="C++ coroutines are great" /><published>2022-06-06T16:21:21+03:00</published><updated>2022-06-06T16:21:21+03:00</updated><id>http://localhost:4000/2022/06/06/cxx-coros-are-great</id><content type="html" xml:base="http://localhost:4000/2022/06/06/cxx-coros-are-great.html">&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
 
-&lt;p&gt;In this post, I will be outlining my learning of c++20 coroutines. When I was reading about it, I thought the feature is weird and is probably a subject for replacement. As I learned more and more about it, I gradually changed my mind. Now, I firmly believe the c++20 coroutines are great and will be improving over time.&lt;/p&gt;
+&lt;p&gt;In this post, I will be outlining my learning of c++20 coroutines. When I was reading about it, I thought the feature was weird and probably a subject for replacement. As I learned more and more about it, I gradually changed my mind. Now, I firmly believe the c++20 coroutines are very good already and will be improving over time.&lt;/p&gt;
 
-&lt;p&gt;For recreational purposes, I write algorithms in c++ every so often. While one often doesn’t need coroutines for writing CPU-bound code, I thought it would be fun to use coroutines for the following toy problem.&lt;/p&gt;
+&lt;p&gt;For recreational purposes, I write algorithms in c++ every so often. While one usually doesn’t need coroutines for writing CPU-bound code, I thought it would be fun to use coroutines for the following toy problem.&lt;/p&gt;
 
-&lt;h1 id=&quot;the-problem&quot;&gt;The problem&lt;/h1&gt;
+&lt;h1 id=&quot;problem&quot;&gt;Problem&lt;/h1&gt;
 
 &lt;p&gt;We have the following ‘node’ class for representing a binary tree.&lt;/p&gt;
 &lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Node&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
@@ -17,12 +17,11 @@
   &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;I call a node &lt;em&gt;a leaf&lt;/em&gt; if both its &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;left&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;right&lt;/code&gt; pointers are null. Given a binary tree root, return a sum of values in its leaves.&lt;/p&gt;
+&lt;p&gt;Let’s call a tree node &lt;em&gt;a leaf&lt;/em&gt; if its &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;left&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;right&lt;/code&gt; pointers are null. The problem is to count a sum of values in its leaves.&lt;/p&gt;
 
-&lt;h1 id=&quot;the-benchmark&quot;&gt;The benchmark&lt;/h1&gt;
+&lt;h1 id=&quot;benchmark&quot;&gt;Benchmark&lt;/h1&gt;
 
-&lt;p&gt;To test different solutions, I used full binary trees. One can generate such trees like that:&lt;/p&gt;
-
+&lt;p&gt;To compare various solutions, I used full binary trees. Each node in such a tree has either both children or none (leaves). One can generate such trees like that:&lt;/p&gt;
 &lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;/// @brief: a full binary tree with `n` leaves&lt;/span&gt;
 &lt;span class=&quot;c1&quot;&gt;/// so `n` is assumed to be 2^k&lt;/span&gt;
 &lt;span class=&quot;n&quot;&gt;Node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;MakeFullTree&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
@@ -36,11 +35,11 @@
   &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;I parametrise the benchmarks below by the number of leaves in a full binary tree.&lt;/p&gt;
+&lt;p&gt;I parametrise the benchmark results below by the number of leaves in a full binary tree.&lt;/p&gt;
 
 &lt;h1 id=&quot;basic-solution&quot;&gt;Basic solution&lt;/h1&gt;
 
-&lt;p&gt;Without coroutines, one can use the following generic code.&lt;/p&gt;
+&lt;p&gt;Without any coroutines, one can use the following generic code.&lt;/p&gt;
 &lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;Dfs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;leaf_callback&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
     &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
@@ -57,7 +56,6 @@
 &lt;span class=&quot;n&quot;&gt;Dfs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;root&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;res&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;res&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;p&gt;We use the depth-first search to traverse the tree and a callback to sum up values. Compared to what follows, it’s ridiculously fast:&lt;/p&gt;
-
 &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;-----------------------------------
 Benchmark                      Time
 -----------------------------------
@@ -66,13 +64,13 @@ BM_Dfs/1048576     3243753 ns
 BM_Dfs/4194304    13239332 ns
 BM_Dfs/16777216   55297925 ns
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;Wouldn’t it be nice to iterate over leaf values though? This question got me into brushing-up my knowledge of coroutines. I mean something like this:&lt;/p&gt;
+&lt;p&gt;Wouldn’t it be nice to iterate over leaf values, though? This question got me into brushing up on my knowledge of coroutines. Specifically, can we write a function like this?&lt;/p&gt;
 &lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;res&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;leaf_value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LeafValues&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;root&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
   &lt;span class=&quot;n&quot;&gt;res&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;leaf_value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;Returning leaf values in a container from the function is trivial, and I don’t want that. The goal is to go back and forth between iterating over leaves and the loop body above.&lt;/p&gt;
 
 &lt;h1 id=&quot;iterators&quot;&gt;Iterators&lt;/h1&gt;
 
@@ -82,10 +80,7 @@ BM_Dfs/16777216   55297925 ns
 
 &lt;h1 id=&quot;stackful-coroutines&quot;&gt;Stackful coroutines&lt;/h1&gt;
 
-&lt;p&gt;Stackful coroutines provide an intuitive way of writing asynchronous code.&lt;/p&gt;
-
-&lt;p&gt;One can build user-level coroutines using the &lt;a href=&quot;https://www.boost.org/doc/libs/1_72_0/libs/coroutine2/doc/html/index.html&quot;&gt;Boost Coroutine2&lt;/a&gt; library. Solving the problem at hand, we can do something like this:&lt;/p&gt;
-
+&lt;p&gt;Stackful coroutines provide an intuitive way of writing asynchronous code. One can build user-level coroutines using the &lt;a href=&quot;https://www.boost.org/doc/libs/1_72_0/libs/coroutine2/doc/html/index.html&quot;&gt;Boost Coroutine2&lt;/a&gt; library. Solving the problem at hand, we can do something like this:&lt;/p&gt;
 &lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// Fun fact: the generic code above could be applied there&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;DfsImpl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;coro_t&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;push_type&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;yield&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
@@ -100,16 +95,17 @@ BM_Dfs/16777216   55297925 ns
   &lt;span class=&quot;n&quot;&gt;DfsImpl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;yield&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 
+&lt;span class=&quot;c1&quot;&gt;/// @brief: creates a channel-like handle&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;/// this is effectively the entry point&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;/// to the coroutine execution flow&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;LeafValues&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;c1&quot;&gt;// create a channel-like handle; this is effectively the entry point&lt;/span&gt;
-  &lt;span class=&quot;c1&quot;&gt;// to the coroutine execution flow: call to coro will resume the coroutine&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// call to `coro` will resume the coroutine&lt;/span&gt;
   &lt;span class=&quot;n&quot;&gt;coro_t&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pull_type&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;coro&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;([&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;coro_t&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;push_type&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;yield&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
     &lt;span class=&quot;n&quot;&gt;DfsImpl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;yield&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
   &lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;coro&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
 &lt;p&gt;If you think about the program stack you will notice something tricky is going on above. Here is the snippet from the library documentation.&lt;/p&gt;
 
 &lt;blockquote&gt;
@@ -120,7 +116,7 @@ BM_Dfs/16777216   55297925 ns
 
 &lt;/blockquote&gt;
 
-&lt;p&gt;Since such coroutines have their own stack space, the word ‘stackful’ applies.&lt;/p&gt;
+&lt;p&gt;Shortly, each coroutine has its memory region for its stack. In particular, the recursion is possible inside a coroutine due to this stack. Hence, the word ‘stackful’ applies.&lt;/p&gt;
 
 &lt;p&gt;The benchmark for this solution gives a good upper bound for any coroutine-based solution.&lt;/p&gt;
 &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;------------------------------------
@@ -136,18 +132,19 @@ BM_Fiber/16777216  801769458 ns
 
 &lt;h1 id=&quot;c-coroutines-an-intro&quot;&gt;C++ coroutines: an intro&lt;/h1&gt;
 
-&lt;p&gt;I don’t feel comfortable writing yet another c++20 coroutines introduction. That is because there are already a bunch of excellent resources. I like &lt;a href=&quot;#references&quot;&gt;1,3-5,7&lt;/a&gt; below.&lt;/p&gt;
+&lt;p&gt;I don’t feel comfortable writing yet another c++20 coroutines introduction. That is because there are already a bunch of excellent resources. I like &lt;a href=&quot;#references&quot;&gt;1, 3-5, 7&lt;/a&gt; below.&lt;/p&gt;
 
 &lt;p&gt;For what follows, I assume we agree on the points below.&lt;/p&gt;
+
 &lt;ul&gt;
   &lt;li&gt;
     &lt;p&gt;To &lt;em&gt;suspend&lt;/em&gt; is to stop the current execution for a while and execute something else. A &lt;em&gt;suspension&lt;/em&gt; might happen only inside a &lt;em&gt;coroutine function&lt;/em&gt;. A &lt;em&gt;coroutine function&lt;/em&gt; is a function with a specific return type that has keywords like &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_{await,yield,return}&lt;/code&gt; inside its body&lt;/p&gt;
   &lt;/li&gt;
   &lt;li&gt;
-    &lt;p&gt;Every time a &lt;em&gt;coroutine function&lt;/em&gt; is created, a &lt;em&gt;memory region&lt;/em&gt; for its locals and state of execution will be allocated. We will informally call this memory region as well as the code inside the coroutine function the &lt;em&gt;coroutine frame&lt;/em&gt;&lt;/p&gt;
+    &lt;p&gt;Every time a &lt;em&gt;coroutine function&lt;/em&gt; is created, a &lt;em&gt;memory region&lt;/em&gt; for its locals and state of execution will be allocated. We will informally call both this memory region and the code inside the coroutine function the &lt;em&gt;coroutine frame&lt;/em&gt;&lt;/p&gt;
   &lt;/li&gt;
   &lt;li&gt;
-    &lt;p&gt;We use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_await&lt;/code&gt; keyword to say to the compiler that we &lt;em&gt;may&lt;/em&gt; suspend here. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_yield&lt;/code&gt; keyword is actually &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_await promise.yield_value&lt;/code&gt;. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_return&lt;/code&gt; keyword is a bit more involved, but does &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_await&lt;/code&gt; in the end&lt;/p&gt;
+    &lt;p&gt;We use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_await&lt;/code&gt; keyword to say to the compiler that we &lt;em&gt;may&lt;/em&gt; suspend here&lt;/p&gt;
   &lt;/li&gt;
 &lt;/ul&gt;
 
@@ -166,7 +163,7 @@ BM_Fiber/16777216  801769458 ns
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;p&gt;The &lt;a href=&quot;https://github.com/lewissbaker/cppcoro/blob/master/include/cppcoro/generator.hpp&quot;&gt;cppcoro generator&lt;/a&gt; is a good reference implementation.&lt;/p&gt;
 
-&lt;p&gt;If we have the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;generator&lt;/code&gt; class above we can write something like this:&lt;/p&gt;
+&lt;p&gt;If we have the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;generator&lt;/code&gt; class above, we can write something like this:&lt;/p&gt;
 &lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;generator&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;LeafValues&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
     &lt;span class=&quot;n&quot;&gt;co_return&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
@@ -183,24 +180,34 @@ BM_Fiber/16777216  801769458 ns
   &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;Both memory and time complexities are bad though. Since &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_yield&lt;/code&gt;s are nested, each value gets propagated &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;O(log(n))&lt;/code&gt; times. Hence, the time complexity is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;O(n log(n))&lt;/code&gt; instead of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;O(n)&lt;/code&gt; for our benchmark. Also, each recursive call of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LeafValues&lt;/code&gt; will heap-allocate the coroutine frame because there is no way to predict its size on the caller site.&lt;/p&gt;
+&lt;p&gt;Both memory and time complexities are suboptimal, though. Since &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_yield&lt;/code&gt;s are nested, each value gets propagated &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;O(log(n))&lt;/code&gt; times. Hence, the time complexity is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;O(n log(n))&lt;/code&gt; instead of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;O(n)&lt;/code&gt; for our benchmark. Also, each recursive call of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LeafValues&lt;/code&gt; will heap-allocate the coroutine frame because there is no way to predict its size on the caller site.&lt;/p&gt;
 
 &lt;p&gt;Let’s ignore the memory for a moment. We can always rely on modern recycling allocators if anything. The time complexity is more interesting to reduce now.&lt;/p&gt;
 
 &lt;h1 id=&quot;symmetric-transfer&quot;&gt;Symmetric transfer&lt;/h1&gt;
 
+&lt;p&gt;In what follows, I use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Coro&lt;/code&gt; as the so-called future class for my coroutine. Its corresponding promise class is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Coro::promise_type&lt;/code&gt;.&lt;/p&gt;
+
 &lt;p&gt;Let’s say we are in a coroutine frame &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;A&lt;/code&gt; and we want to ‘open’ a new coroutine frame &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;B&lt;/code&gt;. To mitigate nested yields, we want to transfer control such that&lt;/p&gt;
 &lt;ul&gt;
   &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;A&lt;/code&gt; suspends and we continue at &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;B&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;If &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;B&lt;/code&gt; suspends we go back to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;A&lt;/code&gt;’s caller (not to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;A&lt;/code&gt;)&lt;/li&gt;
+  &lt;li&gt;If &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;B&lt;/code&gt; suspends we go back to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;A&lt;/code&gt;’s caller (as opposed to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;A&lt;/code&gt;)&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;This is what the symmetric transfer feature does in particular. In code, it looks as follows.&lt;/p&gt;
-&lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;coroutine_handle&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;await_suspend&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;coroutine_handle&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a_handle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;noexcept&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;c1&quot;&gt;// return `B`&apos;s handle to transfer suspend A&lt;/span&gt;
-  &lt;span class=&quot;c1&quot;&gt;// and &apos;fully&apos; transfer control to B&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b_handle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;/// @brief: helper struct to transfering control&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Wait&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;await_ready&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;noexcept&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;await_resume&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;noexcept&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;coroutine_handle&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;await_suspend&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;coroutine_handle&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;coro&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;noexcept&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// return `B`&apos;s handle to transfer suspend A&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// and &apos;fully&apos; transfer control to B&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;handle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;coroutine_handle&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;handle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;p&gt;The method &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;await_suspend&lt;/code&gt; is a required method of an awaitable object. Hence, we need to ‘await’ nested calls. One can overload operator &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_await&lt;/code&gt; for this:&lt;/p&gt;
 &lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Coro&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;operator&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;co_await&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
@@ -225,30 +232,49 @@ BM_Fiber/16777216  801769458 ns
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;p&gt;Post-factum, this code makes perfect sense. The logic stays the same as in the example. We just annotated the points where suspension (will) may happen for the compiler.&lt;/p&gt;
 
-&lt;p&gt;At this point, we’ve covered the first yield. When it happens, we will return to the caller side, but we can’t go back to the coroutine just yet. Nested coroutine handles (frames) naturally form a call stack. In one way or another, we should be able to interact with this stack.&lt;/p&gt;
+&lt;p&gt;At this point, we’ve covered the first yield. When it happens, we will return to the caller side, but we can’t go back to the coroutine just yet. The problem looks like this:&lt;/p&gt;
+&lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// caller side, control transferred to (1)&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;next_value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;top_level_coro_handle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;args&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// (2)&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// to resume correctly we should go back to (3), _not_ to (4)&lt;/span&gt;
 
-&lt;p&gt;Some people store a pointer to the previous frame inside each coroutine handle. This way, it’s effectively an intrusive list data structure.&lt;/p&gt;
+&lt;span class=&quot;n&quot;&gt;Coro&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;TopLevelCoroFn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Args&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;args&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// (1)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;co_await&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AnotherCoro&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;args&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// top level transfers control further&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// (4)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;Coro&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;AnotherCoro&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Args&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;args&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// ...&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;co_yield&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;some_var&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// &amp;lt;- control returns to (2)&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// (3)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Nested coroutine handles (frames) naturally form a call stack. In one way or another, we should be able to interact with this stack. Some people store a pointer to the previous frame inside each coroutine handle. This way, it’s effectively an intrusive list data structure.&lt;/p&gt;
 
 &lt;p&gt;Instead, I decided to allocate the stack itself&lt;sup&gt;&lt;a href=&quot;#notes&quot;&gt; a&lt;/a&gt;&lt;/sup&gt; so that I could use its space to avoid a bunch of heap allocations, and I also could access coroutine frames directly.&lt;/p&gt;
 
 &lt;p&gt;To use a custom allocator, we define class-level overloads.&lt;/p&gt;
-&lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Coro&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;promise_type&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;operator&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;size_t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;c1&quot;&gt;// here `task` is a static, one should use thread_local&lt;/span&gt;
-  &lt;span class=&quot;c1&quot;&gt;// but thread locals are slow on macOS, while OK on Linux&lt;/span&gt;
+&lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// thread locals on macOS are extremely slow (x2-x3 slower here)&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// thread locals on Linux (tested on ubuntu) are OK, though&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// https://github.com/rust-lang/rust/issues/60141 looks relevant&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Task&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;task&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;Task&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// ...&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Coro&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;promise_type&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;operator&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;size_t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;task&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stack&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;New&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
 &lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Coro&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;promise_type&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;operator&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;delete&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;c1&quot;&gt;// no need to delete here&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;We got a fun issue though. The heap allocation elision optimization (HALO) may happen even if there is custom &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;new&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;delete&lt;/code&gt;. And it did happen with my Release build. I used the following to stop HALO.&lt;/p&gt;
-&lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// force compiler to not inline this method&lt;/span&gt;
+&lt;p&gt;Unfortunately, the heap allocation elision optimization (HALO) may happen even though there is a custom new and delete. And it did happen with my Release build. I used the following to stop HALO.&lt;/p&gt;
+&lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// force compiler to not inline this method,&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// otherwise our new/delete won&apos;t be used&lt;/span&gt;
 &lt;span class=&quot;n&quot;&gt;__attribute__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;noinline&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Coro&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Coro&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;promise_type&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get_return_object&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;coroutine_handle&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;promise_type&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;from_promise&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)};&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;I am not sure if it guarantees to prevent HALO every time, though.&lt;/p&gt;
 
 &lt;p&gt;Now, we can go back to the coroutine from which we yielded like that:&lt;/p&gt;
 &lt;div class=&quot;language-c++ highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Task&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Resume&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
@@ -282,13 +308,13 @@ BM_Coro/16777216  316724208 ns
 
 &lt;p&gt;Initially, I had two issues with c++20 coroutines.&lt;/p&gt;
 
-&lt;p&gt;First of all, it seemed you couldn’t control heap allocations. Now, I would say you can but it’s hard (as always). I came across &lt;a href=&quot;https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p2477r0.html&quot;&gt;this proposal&lt;/a&gt; on control over heap allocation elision. Ironically, it might be more important to block HALO rather than to ensure it.&lt;/p&gt;
+&lt;p&gt;First of all, it seemed you couldn’t control heap allocations. Now, I would say you can, but it’s involved (as always). I came across &lt;a href=&quot;https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p2477r0.html&quot;&gt;this proposal&lt;/a&gt; on control over heap allocation elision. Ironically, it might be more important to block HALO rather than to ensure it.&lt;/p&gt;
 
-&lt;p&gt;Lastly, there are about a dozen of customization points. It means one has to write a lot of boilerplate code and understand it before doing something interesting. A good point here is that c++20 coroutines are &lt;em&gt;a low-level assembly-language for coroutines&lt;/em&gt;&lt;sup&gt;&lt;a href=&quot;#references&quot;&gt;3&lt;/a&gt;&lt;/sup&gt; by design.&lt;/p&gt;
+&lt;p&gt;Lastly, there are about a dozen of customization points. It implies a lot of boilerplate code for doing something interesting. It is probably fair enough since c++20 coroutines were designed to be a low-level assembly language for coroutines&lt;sup&gt;&lt;a href=&quot;#references&quot;&gt;3&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
 
-&lt;p&gt;I see a small inconvenience with these customization points, though. Libraries will probably present their own coroutines and awaitables for their concurrency model. Hence, its users won’t be able to just say &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;co_await&lt;/code&gt; without integration with the library. It’s ok but it might be cumbersome to do.&lt;/p&gt;
+&lt;p&gt;I see an inconvenience with these customization points, however. Libraries will probably present their coroutines and awaitables for their concurrency model. Hence, its users won’t be able to just say co_await without thoughtful integration with the library. It’s ok, but it might be cumbersome to do.&lt;/p&gt;
 
-&lt;p&gt;The c++ coroutines are superior already. One can control virtually anything that is happening inside their coroutines.&lt;/p&gt;
+&lt;p&gt;In conclusion, I think the c++ coroutines are appreciable already. One can control almost anything that is happening inside their coroutines.&lt;/p&gt;
 
 &lt;h1 id=&quot;references&quot;&gt;References&lt;/h1&gt;
 
